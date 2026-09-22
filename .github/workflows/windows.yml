@@ -1,0 +1,28 @@
+name: Windows
+
+on:
+  push:
+    paths:
+      - "windows/**"
+      - ".github/workflows/windows.yml"
+  pull_request:
+    paths:
+      - "windows/**"
+      - ".github/workflows/windows.yml"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore windows/WeChatBridge.Windows.sln --configfile windows/NuGet.config
+      - name: Test
+        run: dotnet test windows/WeChatBridge.Windows.sln --configuration Release --no-restore
+      - name: Build Windows app
+        run: dotnet build windows/WeChatBridge.Windows.sln --configuration Release --no-restore

@@ -104,6 +104,10 @@ Scripts/install-dev-build.sh
 
 随后打开“微信流 → 设置 → 入口”，启用需要的分享入口。也可以前往“系统设置 → 通用 → 登录项与扩展 → 共享”管理它们。
 
+## Windows 版（开发中）
+
+Windows 端正在以独立的 WPF + .NET 8 应用实现。当前第一阶段支持导入微信 ZIP / 文件夹、保留本地原始归档，并生成 Obsidian Markdown 笔记。详见 [Windows 版说明](windows/README.md)。
+
 > [!TIP]
 > 本地构建会优先使用钥匙串中的 Apple Development 或 Developer ID 签名。没有可用证书时会使用 ad-hoc 签名，macOS 可能要求重新授予辅助功能权限。
 

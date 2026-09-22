@@ -63,3 +63,8 @@ memory/
 # Python byte-code from local scripts
 __pycache__/
 *.pyc
+
+# Windows / .NET build output
+windows/**/bin/
+windows/**/obj/
+*.user

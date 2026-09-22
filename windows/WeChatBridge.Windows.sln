@@ -1,0 +1,39 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeChatBridge.Windows.Core", "WeChatBridge.Windows.Core\WeChatBridge.Windows.Core.csproj", "{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeChatBridge.Windows", "WeChatBridge.Windows\WeChatBridge.Windows.csproj", "{3C98FC4B-0C14-49FE-AC35-4A8E4B6E8E6B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11} = {8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeChatBridge.Windows.Tests", "WeChatBridge.Windows.Tests\WeChatBridge.Windows.Tests.csproj", "{CFD15325-5EAD-4B70-8C70-EF44AF0FB91F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11} = {8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F13A33D-5E1A-4A58-8A2B-FA6B22DA7B11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C98FC4B-0C14-49FE-AC35-4A8E4B6E8E6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C98FC4B-0C14-49FE-AC35-4A8E4B6E8E6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C98FC4B-0C14-49FE-AC35-4A8E4B6E8E6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C98FC4B-0C14-49FE-AC35-4A8E4B6E8E6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFD15325-5EAD-4B70-8C70-EF44AF0FB91F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFD15325-5EAD-4B70-8C70-EF44AF0FB91F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFD15325-5EAD-4B70-8C70-EF44AF0FB91F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFD15325-5EAD-4B70-8C70-EF44AF0FB91F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
