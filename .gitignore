@@ -67,6 +67,8 @@ __pycache__/
 # Windows / .NET build output
 windows/**/bin/
 windows/**/obj/
+windows/artifacts/
+windows/dev-signing/
 *.user
 
 # Local Notion configuration is stored under %LOCALAPPDATA% when the app runs.

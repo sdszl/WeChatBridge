@@ -87,9 +87,10 @@ public static class WindowsStorage
         WriteJsonAtomic(NotionConfigPath, stored);
     }
 
-    public static string CreateBatchDirectory(Guid batchId)
+    public static string CreateBatchDirectory(Guid batchId, string? inboxRoot = null)
     {
-        var directory = Path.Combine(Inbox, $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{batchId:N}");
+        var root = string.IsNullOrWhiteSpace(inboxRoot) ? Inbox : Path.GetFullPath(inboxRoot);
+        var directory = Path.Combine(root, $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{batchId:N}");
         Directory.CreateDirectory(directory);
         return directory;
     }

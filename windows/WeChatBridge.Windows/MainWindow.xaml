@@ -134,10 +134,17 @@
                                         Background="#1769E0"
                                         Foreground="White"
                                         Click="ImportNotion_Click" />
+                                <Button x:Name="CodexAnalyzeButton"
+                                        Content="发送到 Codex 分析"
+                                        Click="CodexAnalyze_Click" />
                                 <Button x:Name="OpenNotionButton"
                                         Content="打开最近页面"
                                         IsEnabled="False"
                                         Click="OpenNotion_Click" />
+                                <Button x:Name="OpenCodexButton"
+                                        Content="打开 Codex 工作区"
+                                        IsEnabled="False"
+                                        Click="OpenCodex_Click" />
                             </StackPanel>
                         </StackPanel>
                     </Grid>

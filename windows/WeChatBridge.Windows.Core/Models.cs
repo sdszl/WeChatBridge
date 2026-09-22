@@ -60,6 +60,13 @@ public sealed record NotionImportResult(
     int? MessageCount,
     int BlockCount);
 
+public sealed record CodexWorkspace(
+    Guid BatchId,
+    string WorkspacePath,
+    string TranscriptPath,
+    string SourcePath,
+    int? MessageCount);
+
 public sealed record WindowsBatchRecord(
     Guid BatchId,
     DateTimeOffset CreatedAt,

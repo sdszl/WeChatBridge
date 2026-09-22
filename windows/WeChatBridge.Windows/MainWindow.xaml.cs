@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private NotionSettings _notionSettings;
     private CancellationTokenSource? _exportCancellation;
     private string? _lastNotionUrl;
+    private string? _lastCodexWorkspace;
 
     public MainWindow()
     {
@@ -96,6 +97,86 @@ public partial class MainWindow : Window
         _sources.Clear();
         InputList.Items.Clear();
         StatusText.Text = "已清空待处理列表。";
+    }
+
+    public void AddSharedSources(IEnumerable<string> paths)
+    {
+        AddSources(paths);
+        StatusText.Text = _sources.Count == 0
+            ? "微信分享没有收到可处理的 ZIP。"
+            : $"已自动收到 {_sources.Count} 个微信归档；现在可以导入 Notion 或生成 Markdown。";
+    }
+
+    public void ShowShareError(string message)
+    {
+        StatusText.Text = $"接收微信分享失败：{message}";
+    }
+
+    private async void CodexAnalyze_Click(object sender, RoutedEventArgs e)
+    {
+        if (_sources.Count == 0)
+        {
+            StatusText.Text = "请先选择或接收微信 ZIP。";
+            return;
+        }
+
+        SetBusy(true);
+        _exportCancellation = new CancellationTokenSource();
+        var cancellationToken = _exportCancellation.Token;
+        var completed = 0;
+        var failures = 0;
+
+        try
+        {
+            foreach (var source in _sources.ToArray())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                StatusText.Text = $"正在准备 Codex 工作区：{Path.GetFileName(source)}";
+                try
+                {
+                    var workspace = await Task.Run(
+                        () => CodexWorkspaceWorkflow.Prepare(source, ChatNameTextBox.Text, cancellationToken),
+                        cancellationToken);
+                    _lastCodexWorkspace = workspace.WorkspacePath;
+                    OpenCodexButton.IsEnabled = true;
+                    StatusText.Text = $"正在让 Codex 分析：{Path.GetFileName(source)}";
+                    var result = await CodexLauncher.AnalyzeAsync(workspace, cancellationToken);
+                    completed++;
+                    _lastCodexWorkspace = result.WorkspacePath;
+                    StatusText.Text = $"Codex 分析完成：{result.ResultPath}";
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    failures++;
+                    StatusText.Text = $"Codex 分析失败：{Path.GetFileName(source)} · {exception.Message}";
+                }
+
+                ExportProgress.Value = 100d * (completed + failures) / _sources.Count;
+            }
+
+            if (failures == 0)
+            {
+                StatusText.Text = $"全部完成：{completed} 个归档已由 Codex 分析。可打开 Codex 工作区继续追问。";
+            }
+            else
+            {
+                StatusText.Text = $"处理结束：成功 {completed} 个，失败 {failures} 个。已生成的本地工作区仍保留。";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "已取消。已生成的 Codex 工作区和原始归档均已保留。";
+        }
+        finally
+        {
+            _exportCancellation.Dispose();
+            _exportCancellation = null;
+            SetBusy(false);
+        }
     }
 
     private async void Export_Click(object sender, RoutedEventArgs e)
@@ -299,6 +380,24 @@ public partial class MainWindow : Window
         });
     }
 
+    private void OpenCodex_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastCodexWorkspace) || !Directory.Exists(_lastCodexWorkspace))
+        {
+            StatusText.Text = "还没有可打开的 Codex 工作区。";
+            return;
+        }
+
+        try
+        {
+            CodexLauncher.OpenWorkspace(_lastCodexWorkspace);
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"打开 Codex 失败：{exception.Message}";
+        }
+    }
+
     private void Window_DragOver(object sender, System.Windows.DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)
@@ -364,7 +463,9 @@ public partial class MainWindow : Window
         ExportButton.IsEnabled = !busy;
         OpenButton.IsEnabled = !busy;
         ImportNotionButton.IsEnabled = !busy;
+        CodexAnalyzeButton.IsEnabled = !busy;
         OpenNotionButton.IsEnabled = !busy && !string.IsNullOrWhiteSpace(_lastNotionUrl);
+        OpenCodexButton.IsEnabled = !busy && !string.IsNullOrWhiteSpace(_lastCodexWorkspace);
         NotionPageIdTextBox.IsEnabled = !busy;
         NotionTokenBox.IsEnabled = !busy;
         VaultTextBox.IsEnabled = !busy;
