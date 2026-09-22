@@ -27,6 +27,11 @@ public sealed class WindowsSettings
     public string ObsidianSubfolder { get; set; } = "微信流";
 }
 
+public sealed record NotionSettings(string ParentPageId, string? Token)
+{
+    public bool HasToken => !string.IsNullOrWhiteSpace(Token);
+}
+
 public sealed record ExportRequest(
     string SourcePath,
     string VaultPath,
@@ -41,6 +46,20 @@ public sealed record ExportResult(
     string ArchivePath,
     int? MessageCount);
 
+public sealed record NotionImportRequest(
+    string SourcePath,
+    string ParentPageId,
+    string ChatName,
+    string SceneName);
+
+public sealed record NotionImportResult(
+    Guid BatchId,
+    string PageId,
+    string PageUrl,
+    string LocalBatchPath,
+    int? MessageCount,
+    int BlockCount);
+
 public sealed record WindowsBatchRecord(
     Guid BatchId,
     DateTimeOffset CreatedAt,
@@ -49,10 +68,32 @@ public sealed record WindowsBatchRecord(
     string Status,
     string? NotePath,
     string? Error,
-    int? MessageCount);
+    int? MessageCount,
+    string? NotionPageId = null,
+    string? NotionPageUrl = null,
+    int? NotionBlockCount = null);
 
 public sealed class ArchiveValidationException : Exception
 {
     public ArchiveValidationException(string message) : base(message) { }
     public ArchiveValidationException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+public sealed class NotionConfigurationException : Exception
+{
+    public NotionConfigurationException(string message) : base(message) { }
+    public NotionConfigurationException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+public sealed class NotionApiException : Exception
+{
+    public NotionApiException(string message, int statusCode, string? errorCode = null)
+        : base(message)
+    {
+        StatusCode = statusCode;
+        ErrorCode = errorCode;
+    }
+
+    public int StatusCode { get; }
+    public string? ErrorCode { get; }
 }

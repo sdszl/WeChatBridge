@@ -24,7 +24,7 @@
                        FontWeight="SemiBold"
                        Foreground="#1B1F24" />
             <TextBlock Margin="0,8,0,0"
-                       Text="把微信导出的聊天归档保存到本地，并生成 Obsidian Markdown 笔记。"
+                       Text="把微信导出的聊天归档导入 Notion，或生成 Obsidian Markdown 笔记。"
                        FontSize="15"
                        Foreground="#5C6670" />
         </StackPanel>
@@ -70,73 +70,155 @@
                 CornerRadius="8">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0"
-                           Text="2 · 归档设置"
-                           FontSize="17"
-                           FontWeight="SemiBold" />
 
-                <Grid Grid.Row="1" Margin="0,18,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="Obsidian 知识库" />
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <TextBox x:Name="VaultTextBox" MinWidth="520" />
-                        <Button Content="选择…" Click="ChooseVault_Click" />
-                    </StackPanel>
-                </Grid>
+                <TabControl x:Name="DestinationTabs" Grid.Row="0">
+                <TabItem Header="Notion（推荐）">
+                    <Grid Margin="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0"
+                                   Text="导入到 Notion"
+                                   FontSize="17"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Grid.Row="0"
+                                   Margin="0,28,0,0"
+                                   Text="每个微信归档会创建一个 Notion 子页面，写入标题、发送人、时间和原文。"
+                                   Foreground="#65707A"
+                                   TextWrapping="Wrap" />
 
-                <Grid Grid.Row="2" Margin="0,12,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="笔记子文件夹" />
-                    <TextBox x:Name="SubfolderTextBox" Grid.Column="1" Text="微信流" />
-                </Grid>
+                        <Grid Grid.Row="1" Margin="0,42,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="目标页面" />
+                            <TextBox x:Name="NotionPageIdTextBox"
+                                     Grid.Column="1"
+                                     ToolTip="粘贴 Notion 页面链接或页面 ID" />
+                        </Grid>
 
-                <Grid Grid.Row="3" Margin="0,12,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="聊天名称（可选）" />
-                    <TextBox x:Name="ChatNameTextBox" Grid.Column="1" />
-                </Grid>
+                        <Grid Grid.Row="2" Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="Integration Token" />
+                            <StackPanel Grid.Column="1">
+                                <PasswordBox x:Name="NotionTokenBox"
+                                             ToolTip="只用于当前 Windows 用户的本机 DPAPI 加密保存" />
+                                <TextBlock x:Name="NotionTokenStatusText"
+                                           Margin="0,5,0,0"
+                                           Foreground="#65707A" />
+                            </StackPanel>
+                        </Grid>
 
-                <StackPanel Grid.Row="4" Margin="0,22,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Button x:Name="ExportButton"
-                                Content="导入并生成 Markdown"
-                                Background="#1769E0"
-                                Foreground="White"
-                                Click="Export_Click" />
-                        <Button x:Name="OpenButton"
-                                Content="打开知识库"
-                                Click="OpenVault_Click" />
-                    </StackPanel>
-                    <ProgressBar x:Name="ExportProgress"
-                                 Margin="0,16,0,0"
-                                 Height="6"
-                                 IsIndeterminate="False" />
-                    <TextBlock x:Name="StatusText"
-                               Margin="0,12,0,0"
-                               TextWrapping="Wrap"
-                               Foreground="#59636D" />
-                </StackPanel>
+                        <TextBlock Grid.Row="3"
+                                   Margin="0,14,0,0"
+                                   Text="准备：在 Notion 创建 Internal Integration，把目标页面分享给它，并复制 Token。Token 不会写入仓库。"
+                                   Foreground="#65707A"
+                                   TextWrapping="Wrap" />
+
+                        <StackPanel Grid.Row="4" Margin="0,22,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="ImportNotionButton"
+                                        Content="导入到 Notion"
+                                        Background="#1769E0"
+                                        Foreground="White"
+                                        Click="ImportNotion_Click" />
+                                <Button x:Name="OpenNotionButton"
+                                        Content="打开最近页面"
+                                        IsEnabled="False"
+                                        Click="OpenNotion_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Obsidian / 本地 Markdown">
+                    <Grid Margin="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0"
+                                   Text="本地归档设置"
+                                   FontSize="17"
+                                   FontWeight="SemiBold" />
+
+                        <Grid Grid.Row="1" Margin="0,18,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="Obsidian 知识库" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <TextBox x:Name="VaultTextBox" MinWidth="520" />
+                                <Button Content="选择…" Click="ChooseVault_Click" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Grid.Row="2" Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="笔记子文件夹" />
+                            <TextBox x:Name="SubfolderTextBox" Grid.Column="1" Text="微信流" />
+                        </Grid>
+
+                        <Grid Grid.Row="3" Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="聊天名称（可选）" />
+                            <TextBox x:Name="ChatNameTextBox" Grid.Column="1" />
+                        </Grid>
+
+                        <StackPanel Grid.Row="4" Margin="0,22,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="ExportButton"
+                                        Content="导入并生成 Markdown"
+                                        Background="#1769E0"
+                                        Foreground="White"
+                                        Click="Export_Click" />
+                                <Button x:Name="OpenButton"
+                                        Content="打开知识库"
+                                        Click="OpenVault_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+                </TabControl>
+
+                <ProgressBar x:Name="ExportProgress"
+                             Grid.Row="1"
+                             Margin="12,16,12,0"
+                             Height="6"
+                             IsIndeterminate="False" />
+                <TextBlock x:Name="StatusText"
+                           Grid.Row="2"
+                           Margin="12,12,12,0"
+                           TextWrapping="Wrap"
+                           Foreground="#59636D" />
             </Grid>
         </Border>
 
         <TextBlock Grid.Row="3"
                    Margin="0,16,0,0"
-                   Text="本地收件箱：%LOCALAPPDATA%\\WeChatBridge\\Inbox · 当前版本不会读取或修改微信数据库。"
+                    Text="本地收件箱：%LOCALAPPDATA%\\WeChatBridge\\Inbox · Notion Token 使用 Windows DPAPI 保存 · 不读取或修改微信数据库。"
                    Foreground="#78838D"
                    TextWrapping="Wrap" />
     </Grid>

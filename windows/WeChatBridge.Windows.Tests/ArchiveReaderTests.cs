@@ -17,8 +17,11 @@ public sealed class ArchiveReaderTests
             using (var archive = ZipFile.Open(archivePath, ZipArchiveMode.Create))
             {
                 var transcript = archive.CreateEntry("聊天记录.txt");
-                using var writer = new StreamWriter(transcript.Open(), new UTF8Encoding(false));
-                writer.Write("·甲\n2026年9月5日 08:05\n第一条\n\n·乙\n2026年9月5日 08:06\n第二条\n");
+                using (var writer = new StreamWriter(transcript.Open(), new UTF8Encoding(false)))
+                {
+                    writer.Write("·甲\n2026年9月5日 08:05\n第一条\n\n·乙\n2026年9月5日 08:06\n第二条\n");
+                }
+
                 var image = archive.CreateEntry("images/photo.png");
                 using var imageStream = image.Open();
                 imageStream.Write([1, 2, 3, 4]);

@@ -13,15 +13,34 @@ public partial class MainWindow : Window
 {
     private readonly List<string> _sources = [];
     private WindowsSettings _settings;
+    private NotionSettings _notionSettings;
     private CancellationTokenSource? _exportCancellation;
+    private string? _lastNotionUrl;
 
     public MainWindow()
     {
         InitializeComponent();
         _settings = WindowsStorage.LoadSettings();
+        try
+        {
+            _notionSettings = WindowsStorage.LoadNotionSettings();
+        }
+        catch (NotionConfigurationException exception)
+        {
+            _notionSettings = new NotionSettings(string.Empty, null);
+            StatusText.Text = exception.Message;
+        }
+
         VaultTextBox.Text = _settings.ObsidianVaultPath;
         SubfolderTextBox.Text = _settings.ObsidianSubfolder;
-        StatusText.Text = "等待选择微信导出的 ZIP 或文件夹。";
+        NotionPageIdTextBox.Text = _notionSettings.ParentPageId;
+        NotionTokenStatusText.Text = _notionSettings.HasToken
+            ? "已保存 Token；留空即可复用。"
+            : "尚未保存 Token。";
+        if (string.IsNullOrWhiteSpace(StatusText.Text))
+        {
+            StatusText.Text = "等待选择微信导出的 ZIP 或文件夹。";
+        }
     }
 
     private void SelectFiles_Click(object sender, RoutedEventArgs e)
@@ -148,6 +167,106 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void ImportNotion_Click(object sender, RoutedEventArgs e)
+    {
+        if (_sources.Count == 0)
+        {
+            StatusText.Text = "请先选择 ZIP 文件或文件夹。";
+            return;
+        }
+
+        string parentPageId;
+        try
+        {
+            parentPageId = NotionIds.Normalize(NotionPageIdTextBox.Text);
+        }
+        catch (NotionConfigurationException exception)
+        {
+            StatusText.Text = exception.Message;
+            return;
+        }
+
+        var token = NotionTokenBox.Password.Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            token = _notionSettings.Token ?? string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            StatusText.Text = "请填写 Notion Integration Token；保存后下次可留空复用。";
+            return;
+        }
+
+        try
+        {
+            WindowsStorage.SaveNotionSettings(parentPageId, token);
+            _notionSettings = new NotionSettings(parentPageId, token);
+            NotionPageIdTextBox.Text = parentPageId;
+            NotionTokenBox.Clear();
+            NotionTokenStatusText.Text = "Token 已使用当前 Windows 用户的 DPAPI 加密保存。";
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or NotionConfigurationException)
+        {
+            StatusText.Text = $"Notion 配置保存失败：{exception.Message}";
+            return;
+        }
+
+        SetBusy(true);
+        _exportCancellation = new CancellationTokenSource();
+        var cancellationToken = _exportCancellation.Token;
+        var completed = 0;
+        var failures = 0;
+
+        try
+        {
+            using var notionClient = new NotionClient(token);
+            foreach (var source in _sources.ToArray())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                StatusText.Text = $"正在导入 Notion：{Path.GetFileName(source)}";
+                try
+                {
+                    var request = new NotionImportRequest(
+                        source,
+                        parentPageId,
+                        ChatNameTextBox.Text,
+                        string.Empty);
+                    var result = await NotionArchiveWorkflow.ImportAsync(request, notionClient, cancellationToken);
+                    completed++;
+                    _lastNotionUrl = result.PageUrl;
+                    OpenNotionButton.IsEnabled = true;
+                    StatusText.Text = $"已完成 {completed}/{_sources.Count}：{result.PageUrl}";
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    failures++;
+                    StatusText.Text = $"Notion 导入失败：{Path.GetFileName(source)} · {exception.Message}";
+                }
+
+                ExportProgress.Value = 100d * (completed + failures) / _sources.Count;
+            }
+
+            StatusText.Text = failures == 0
+                ? $"全部完成：{completed} 个归档已导入 Notion，并已回读验证。"
+                : $"处理结束：成功 {completed} 个，失败 {failures} 个。失败归档仍保留在本地收件箱。";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "已取消。已完成的 Notion 页面和本地原始归档均已保留。";
+        }
+        finally
+        {
+            _exportCancellation.Dispose();
+            _exportCancellation = null;
+            SetBusy(false);
+        }
+    }
+
     private void OpenVault_Click(object sender, RoutedEventArgs e)
     {
         var path = Directory.Exists(VaultTextBox.Text) ? VaultTextBox.Text : WindowsStorage.Root;
@@ -156,6 +275,26 @@ public partial class MainWindow : Window
         {
             FileName = "explorer.exe",
             Arguments = $"\"{path}\"",
+            UseShellExecute = true,
+        });
+    }
+
+    private void OpenNotion_Click(object sender, RoutedEventArgs e)
+    {
+        if (!Uri.TryCreate(_lastNotionUrl, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            !(uri.Host.Equals("notion.so", StringComparison.OrdinalIgnoreCase) ||
+              uri.Host.EndsWith(".notion.so", StringComparison.OrdinalIgnoreCase) ||
+              uri.Host.Equals("notion.site", StringComparison.OrdinalIgnoreCase) ||
+              uri.Host.EndsWith(".notion.site", StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusText.Text = "最近的 Notion 页面链接无效。";
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = uri.ToString(),
             UseShellExecute = true,
         });
     }
@@ -224,6 +363,10 @@ public partial class MainWindow : Window
         ClearButton.IsEnabled = !busy;
         ExportButton.IsEnabled = !busy;
         OpenButton.IsEnabled = !busy;
+        ImportNotionButton.IsEnabled = !busy;
+        OpenNotionButton.IsEnabled = !busy && !string.IsNullOrWhiteSpace(_lastNotionUrl);
+        NotionPageIdTextBox.IsEnabled = !busy;
+        NotionTokenBox.IsEnabled = !busy;
         VaultTextBox.IsEnabled = !busy;
         SubfolderTextBox.IsEnabled = !busy;
         ChatNameTextBox.IsEnabled = !busy;

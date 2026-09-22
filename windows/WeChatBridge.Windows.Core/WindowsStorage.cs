@@ -15,6 +15,7 @@ public static class WindowsStorage
         "WeChatBridge");
 
     public static string Inbox => Path.Combine(Root, "Inbox");
+    public static string NotionConfigPath => Path.Combine(Root, "notion.config.json");
     private static string SettingsPath => Path.Combine(Root, "settings.json");
 
     public static WindowsSettings LoadSettings()
@@ -41,6 +42,51 @@ public static class WindowsStorage
         WriteJsonAtomic(SettingsPath, settings);
     }
 
+    public static NotionSettings LoadNotionSettings()
+    {
+        if (!File.Exists(NotionConfigPath))
+        {
+            return new NotionSettings(string.Empty, null);
+        }
+
+        try
+        {
+            var stored = JsonSerializer.Deserialize<StoredNotionSettings>(
+                File.ReadAllText(NotionConfigPath),
+                JsonOptions);
+            if (stored is null)
+            {
+                return new NotionSettings(string.Empty, null);
+            }
+
+            var token = string.IsNullOrWhiteSpace(stored.ProtectedToken)
+                ? null
+                : WindowsSecretStore.UnprotectFromBase64(stored.ProtectedToken);
+            return new NotionSettings(stored.ParentPageId?.Trim() ?? string.Empty, token);
+        }
+        catch (NotionConfigurationException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            throw new NotionConfigurationException(
+                $"无法读取本机 Notion 配置，请检查文件：{NotionConfigPath}",
+                exception);
+        }
+    }
+
+    public static void SaveNotionSettings(string parentPageId, string token)
+    {
+        var stored = new StoredNotionSettings
+        {
+            ParentPageId = parentPageId.Trim(),
+            ProtectedToken = WindowsSecretStore.ProtectToBase64(token),
+        };
+        Directory.CreateDirectory(Root);
+        WriteJsonAtomic(NotionConfigPath, stored);
+    }
+
     public static string CreateBatchDirectory(Guid batchId)
     {
         var directory = Path.Combine(Inbox, $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{batchId:N}");
@@ -58,5 +104,11 @@ public static class WindowsStorage
         var temporary = path + ".partial-" + Guid.NewGuid().ToString("N");
         File.WriteAllText(temporary, JsonSerializer.Serialize(value, JsonOptions));
         File.Move(temporary, path, overwrite: true);
+    }
+
+    private sealed class StoredNotionSettings
+    {
+        public string ParentPageId { get; set; } = string.Empty;
+        public string ProtectedToken { get; set; } = string.Empty;
     }
 }

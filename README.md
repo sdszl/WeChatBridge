@@ -106,7 +106,7 @@ Scripts/install-dev-build.sh
 
 ## Windows 版（开发中）
 
-Windows 端正在以独立的 WPF + .NET 8 应用实现。当前第一阶段支持导入微信 ZIP / 文件夹、保留本地原始归档，并生成 Obsidian Markdown 笔记。详见 [Windows 版说明](windows/README.md)。
+Windows 端正在以独立的 WPF + .NET 8 应用实现。当前支持导入微信 ZIP / 文件夹、保留本地原始归档、直接写入 Notion 子页面，以及生成 Obsidian Markdown 笔记。详见 [Windows 版说明](windows/README.md) 和 [本地配置说明](CONFIGURATION.md)。
 
 > [!TIP]
 > 本地构建会优先使用钥匙串中的 Apple Development 或 Developer ID 签名。没有可用证书时会使用 ad-hoc 签名，macOS 可能要求重新授予辅助功能权限。

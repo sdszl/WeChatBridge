@@ -68,3 +68,6 @@ __pycache__/
 windows/**/bin/
 windows/**/obj/
 *.user
+
+# Local Notion configuration is stored under %LOCALAPPDATA% when the app runs.
+windows/notion.config.json
